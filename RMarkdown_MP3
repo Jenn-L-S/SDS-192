@@ -1,0 +1,192 @@
+---
+title: "2010: Breakdowns of Baby Names by US States"
+author: "Group 09: Leap Kasten and Jennifer Smith"
+date: "December 3rd, 2018"
+output:
+  html_document:
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+    df_print: kable
+    code_folding: hide
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Set R Markdown chunk defaults:
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE, 
+  fig.width = 16/2, fig.height = 9/2
+)
+```
+
+
+```{r}
+# Load all necessary packages here. It's a good idea to load all packages at 
+# the beginning of a Rmd file so that collaborators can see in one shot all
+# packages they'll need to ensure are installed beforehand:
+library(readr)
+library(leaflet)
+library(ggplot2)
+library(USAboundaries)
+library(dplyr)
+library(tools)
+
+# Do your data loading and wrangling (if any) here:
+MaleBabyNames <- read_csv("~/MaleBabyNamesState2010.csv", 
+    col_types = cols(X5 = col_skip()))
+FemaleBabyNames <- read_csv("~/FemaleBabyNamesState2010.csv", 
+    col_types = cols(X5 = col_skip()))
+
+USA_sf <- maps::map("state", plot = FALSE, fill = TRUE) %>%
+  sf::st_as_sf() %>%
+  sf::st_transform(4326)
+
+male_names <- merge(USA_sf, MaleBabyNames)
+female_names <- merge(USA_sf, FemaleBabyNames)
+
+male_names$ID <- toTitleCase(male_names$ID)
+female_names$ID <- toTitleCase(female_names$ID)
+```
+
+
+# Introduction
+
+Names both cast influence on and are influenced by popular culture and thus come in phases: making the popular names of each year entirely unique to that year. In this article we shall delve into 2010’s most popular baby names in the United States using data provided by the US Social Security Administration. 
+
+# Breakdown of Names by State
+
+```{r, echo = TRUE}
+# Now, onto the most popular male baby name per state. Here we assign the 
+# bins and colors of said bins to the graph. For males, we chose Reds.
+bins <- c(0, 25, 50, 100, 250, 500, 1000, 5000)
+pal <- colorBin("Reds", domain = male_names$Count, bins = bins)
+
+# Here we label the most popular male names so that we can display the labels
+# on the map.
+labels <- sprintf(
+  "<strong>%s</strong><br/>%s: %s</sup>",
+  male_names$ID, male_names$Name, male_names$Count
+) %>% lapply(htmltools::HTML)
+
+# Here we set the view over the continental USA. 
+leaflet(male_names) %>%
+  addTiles() %>% 
+setView(-96, 37.8, zoom = 4) %>%
+addProviderTiles(
+  "MapBox", 
+  options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+# Here we color the states by how many instances of the most popular names occur.
+# This allows us to see the areas where most children of those names were born.
+  addPolygons(
+    fillColor = ~pal(male_names$Count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlight = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~Count, opacity = 0.7, title = NULL,
+            position = "bottomright")
+
+# Now, onto the most popular female baby name per state. Here we assign the 
+# bins and colors of said bins to the graph. Here we decided on Greens.
+bins <- c(0, 25, 50, 100, 250, 500, 1000, 5000)
+pal <- colorBin("Greens", domain = female_names$Count, bins = bins)
+
+# Here we label the most popular female names so that we can display the labels
+# on the map.
+labels2 <- sprintf(
+  "<strong>%s</strong><br/>%s: %s</sup>",
+  female_names$ID, female_names$Name, female_names$Count
+) %>% lapply(htmltools::HTML)
+
+# Here we set the view over the continental USA. 
+leaflet(female_names) %>%
+  addTiles() %>% 
+setView(-96, 37.8, zoom = 4) %>%
+addProviderTiles(
+  "MapBox", 
+  options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+# Here we color the states by how many instances of the most popular names occur.
+# This allows us to see the areas where most children of those names were born.
+    addPolygons(
+    fillColor = ~pal(female_names$Count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlight = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels2,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~Count, opacity = 0.7, title = NULL,
+            position = "bottomright")
+
+```
+
+## In Summary
+
+These interactive maps (shown above) highlight the most popular female baby name and most popular male baby name of 2010 for each state in the US as well as in the District of Columbia. Overall, the two most popular baby names in the United States in 2010 were Jacob and Isabella, male and female respectively.  Jacob was the top name in 16 of states plus Washington DC which translates to 31% of the United States while Isabella was the top name in 24 of the total 51 areas which translates to 47%. These percentages may seem like useless information, but they are very useful to the writers who work in entertainment and media. To create an accurate world or set of characters writers must have a grasp on the setting. Novelists and screenwriters in particular would find these observations the most as they often create stories that are set in real places and times. Though names may seem arbitrary stories are improved with more specificity and attention to detail thus if one were to write a family drama set in present day [2018] West Virginia told through the eyes of an average eight-year-old boy, his name would likely be Jacob.
+
+Names effect current popular culture but they also derive their modern roots in it. The two most popular names, Jacob and Isabella reflect the cultural likes of 2010. For example, Jacob is most probably attributed to the infamous Twilight Saga. Though these supernatural romances by Stephenie Meyer started in 2005 with the release of the first book but the first movie had been released in 2009 and the second slated for 2011 reviving the interest of younger women. Even those who didn’t read or care for the human/vampire/werewolf love story would have been aware of the werewolf, the moody best friend character Jacob. Isabella may have gained in popularity due to the long running cartoon Phineas and Ferb which was at its height in 2010. Parents with younger children would be exposed to this show which features a kind and intelligent girl called Isabella. The show’s influence might have only been on a subconscious level, but it would explain away the reason not one of the areas has Isabelle in the top three baby girls' names whereas Isabella was highly common throughout most of the country. 
+
+## Female Names
+
+The static map below shows the distribution of female baby names across the United States. Isabella (green) holds the highest total amount of states without much concentration. The choice of Isabella primarily spans across the Southern states, 
+but is still prevalent throughout the continent.
+
+```{r, echo = TRUE}
+# Here we display how the female names were broken down by state, and which states
+# shared the same names.
+ggplot() +
+  geom_sf(data = female_names, aes(fill = Name)) + 
+  labs(title = "Female Name Popularities", x = "longitutde", y = "latitude")
+```
+
+## Male Names
+
+Due to the focus or lack thereof, we can establish that it is either a regional name or not. In the age of information sharing it is unlikely to find highly localized names but there are trends among the regions but not impossible. For example, along the border with Mexico one expects to find more Spanish influenced names do to the cultural overlap but due to the fact that the data has been taken from US Social Security card applications it is less apparent. This is presumably because of undocumented asylum seekers and immigrants who do not want to be deported if discovered. In the static map of male names below, William (pink) is a great example of popular but localized name.
+
+```{r, echo = TRUE}
+# Here we display how the male names were broken down by state, and which states
+# shared the same names.
+ggplot() +
+  geom_sf(data = male_names, aes(fill = Name)) + 
+  labs(title = "Male Name Popularities", x = "longitutde", y = "latitude")
+```
+
+# In Conclusion
+
+We have talked about Jacob quite a bit as it is the most popular name, but William is also very common but with a concentration in the Southeast and Mid Atlantic whereas Jacob (mustard brown) has a pretty even spread. Prince William announced his engagement in 2010 bringing him to the forefront of our global collective consciousness with the anticipation of his spring wedding. The cause of such a spread is a mixture of many factors some impact is from a localized culture but especially in the internet age much comes from more uniform national and global cultures.   
+This information can assist one in identifying a person's general age from solely their name, making it important to get these names to be accurate in various entertainment forms. Writers across the board can improve their stories with names accurate to the time and space of their settings, and this especially applies to the modern novelist or world-building screenwriter.
+
+# References and Citations
+
+* [For Big-Data Scientists, ‘Janitor Work’ Is Key Hurdle to Insights](https://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html){target="_blank"}, New York Times, August 17 2014.
+
+* [Baby Names from Social Security Card Applications - Data by State and District of Columbia](https://catalog.data.gov/dataset/baby-names-from-social-security-card-applications-data-by-state-and-district-of-), Data.Gov, November 27 2018
