@@ -1,0 +1,25 @@
+# Group number: 12
+# Group members: Jennifer Smith & Jinghan Gao
+
+# 1. Load all necessary packages here
+library(ggplot2)
+library(avengers)
+
+# 2. Include the code that generates the plot of interest here and (if any) comments
+# that are relevant to people who want to recreate plot
+
+# Here we used the avengers dataset, which is built into RStudio and imported
+# from fivethirtyeight to create a simple scatterplot. The scatterplot is 
+# split by the numerical variables of year (x) and appearance (y) and is coded
+# to show the genders by color for the sake of easier reading. 
+# Run ?avengers and View(avengers) in the console for more details.
+
+avengers_recent <- avengers %>%
+filter(year >= 1950)
+
+ggplot(data = avengers_recent, mapping = aes(x = year, y = appearances, color = gender)) +
+  geom_point() + 
+  labs(x = "Year of Debut", y = "Comic Appearances", title = "SPIDERMAN, YOU OUTLIER (Avengers: Appearances)")
+
+# 3. Cite all external sources here:
+# None for this plot.
